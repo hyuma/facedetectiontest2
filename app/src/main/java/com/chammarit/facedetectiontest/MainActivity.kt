@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 
 import android.hardware.camera2.CameraDevice
@@ -148,13 +149,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openCamera() {
-        Log.d(TAG, "WOOF")
         if (ContextCompat.checkSelfPermission( this,Manifest.permission.CAMERA ) == PackageManager.PERMISSION_GRANTED )
         {
-            cameraManager.openCamera("0", object: CameraDevice.StateCallback() {
+        //利用可能なカメラIDのリストを取得
+        val cameraIdList = cameraManager.cameraIdList
+        //用途に合ったカメラIDを設定
+        var mCameraId: String? = null
+        for (cameraId in cameraIdList) {
+            //カメラの向き(インカメラ/アウトカメラ)は以下のロジックで判別可能です。(今回はアウトカメラを使用します)
+            val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+            when (characteristics.get(CameraCharacteristics.LENS_FACING)) {
+                CameraCharacteristics.LENS_FACING_FRONT -> {
+                    mCameraId = cameraId
+                }
+                CameraCharacteristics.LENS_FACING_BACK -> {}
+            }
+        }
+
+            cameraManager.openCamera(mCameraId, object: CameraDevice.StateCallback() {
                 override fun onOpened(camera: CameraDevice) {
                     cameraDevice = camera
-                    Log.d(TAG, "JUTA")
                     createCameraPreviewSession()
                 }
 
@@ -192,6 +206,5 @@ class MainActivity : AppCompatActivity() {
 
             override fun onConfigureFailed(session: CameraCaptureSession) {}
         }, null)
-        Log.d(TAG, "MEOWMEOW")
     }
 }
